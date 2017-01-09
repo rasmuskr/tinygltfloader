@@ -555,7 +555,7 @@ class TinyGLTFLoader {
   /// `length` = strlen(str);
   /// Returns false and set error string to `err` if there's an error.
   bool LoadFromString(Scene *scene, std::string *err, const char *str,
-                      const unsigned int length, const unsigned int total_length,
+                      const unsigned int length, const unsigned char *bin_data, const unsigned int bin_len,
                       const std::string &base_dir,
                       unsigned int check_sections);
 
@@ -2151,7 +2151,7 @@ static bool ParseSampler(Sampler *sampler, std::string *err,
 
 bool TinyGLTFLoader::LoadFromString(Scene *scene, std::string *err,
                                     const char *str, unsigned int length,
-                                    unsigned int total_length,
+                                    const unsigned char *bin_data, const unsigned int bin_len,
                                     const std::string &base_dir,
                                     unsigned int check_sections) {
   picojson::value v;
@@ -2243,10 +2243,12 @@ bool TinyGLTFLoader::LoadFromString(Scene *scene, std::string *err,
       Buffer buffer;
 
       if(it->first == "KHR_binary_glTF") {
-          unsigned int buffer_length = total_length - length;
-          buffer.data.resize(static_cast<size_t>(buffer_length));
-          memcpy(&(buffer.data.at(0)), str + length + 20,
-                 static_cast<size_t>(buffer_length));
+          if(bin_data == NULL){
+              return false;
+          }
+          buffer.data.resize(static_cast<size_t>(bin_len));
+          memcpy(&(buffer.data.at(0)), bin_data,
+                 static_cast<size_t>(bin_len));
           buffer.name = it->first;
       }
       else {
@@ -2525,7 +2527,7 @@ bool TinyGLTFLoader::LoadASCIIFromString(Scene *scene, std::string *err,
   bin_data_ = NULL;
   bin_size_ = 0;
 
-  return LoadFromString(scene, err, str, length, length, base_dir, check_sections);
+  return LoadFromString(scene, err, str, length, bin_data_, bin_size_, base_dir, check_sections);
 }
 
 bool TinyGLTFLoader::LoadASCIIFromFile(Scene *scene, std::string *err,
@@ -2621,8 +2623,11 @@ bool TinyGLTFLoader::LoadBinaryFromMemory(Scene *scene, std::string *err,
       length - (20 + scene_length);  // extract header + JSON scene data.
 
   bool ret =
-      LoadFromString(scene, err, reinterpret_cast<const char *>(&bytes[20]),
-                     scene_length, length, base_dir, check_sections);
+      LoadFromString(scene, err,
+          reinterpret_cast<const char *>(&bytes[20]),scene_length,
+          bin_data_, bin_size_,
+          base_dir, check_sections
+      );
   if (!ret) {
     return ret;
   }
