@@ -362,8 +362,6 @@ static void SetupCurvesState(tinygltf::Scene &scene, GLuint progId) {
       for (size_t primId = 0; primId < mesh.primitives.size(); primId++) {
         const tinygltf::Primitive &primitive = mesh.primitives[primId];
 
-        gMeshState[mesh.name].diffuseTex[primId] = 0;
-
         if (primitive.material.empty()) {
           continue;
         }
@@ -387,6 +385,8 @@ static void SetupCurvesState(tinygltf::Scene &scene, GLuint progId) {
         if (!has_curves) {
           continue;
         }
+
+        gMeshState[mesh.name].diffuseTex[primId] = 0;
 
         // Construct curves buffer
         const tinygltf::Accessor &vtx_accessor =
@@ -512,6 +512,7 @@ static void DrawMesh(tinygltf::Scene &scene, const tinygltf::Mesh &mesh) {
 
   if (gGLProgramState.uniforms["diffuseTex"] >= 0) {
     glUniform1i(gGLProgramState.uniforms["diffuseTex"], 0);  // TEXTURE0
+    CheckErrors("uniform1i diffuseTex");
   }
 
   if (gGLProgramState.uniforms["isCurvesLoc"] >= 0) {
@@ -530,6 +531,7 @@ static void DrawMesh(tinygltf::Scene &scene, const tinygltf::Mesh &mesh) {
 
     // Assume TEXTURE_2D target for the texture object.
     glBindTexture(GL_TEXTURE_2D, gMeshState[mesh.name].diffuseTex[i]);
+    CheckErrors("bind texture");
 
     for (; it != itEnd; it++) {
       assert(scene.accessors.find(it->second) != scene.accessors.end());

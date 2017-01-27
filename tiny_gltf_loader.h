@@ -1717,6 +1717,10 @@ static bool ParsePrimitive(Primitive *primitive, std::string *err,
 
 static bool ParseMesh(Mesh *mesh, std::string *err, const picojson::object &o) {
   ParseStringProperty(&mesh->name, err, o, "name", false);
+  if(mesh->name == ""){
+    printf("empty name\n");
+    mesh->name = std::string("unnamed");
+  }
 
   mesh->primitives.clear();
   picojson::object::const_iterator primObject = o.find("primitives");
